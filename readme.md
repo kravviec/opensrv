@@ -1,6 +1,6 @@
 Info: English below!
 
-# OpenSRV
+# OpenSRV (DE)
 
 Ziel von OpenSRV soll es sein, im Wohnmobil oder Wohnwagen, Smarthome-ähnliche Funktionen nachzurüsten.
 
@@ -28,7 +28,7 @@ Aktuell habe ich noch zwei weitere Repos, die aber hier reinkopiert werden solle
 
 ---
 
-# OpenSRV
+# OpenSRV (EN)
 
 The aim of OpenSRV should be to retrofit smart home-like functions in mobile homes or caravans/rv.
 
