@@ -31,10 +31,10 @@ Diverse Funktionen und Programmteile teile ich auf unterschiedliche Hardware aus
 
 ### Node01
 
-*Hardware*
+**Hardware**
 ESP8266 (Wemos D1 mini Klon)
 
-*Sensoren*
+**Sensoren**
 * BME280 (Temperatur, Luftfeuchigkeit, Luftdruck)
 * ds18b20 (Temperatur, wasserdicht)
 * ublox Neo-6m (GPS, Datum, Uhrzeit, Höhe über Null)
