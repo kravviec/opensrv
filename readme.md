@@ -19,12 +19,11 @@ Auf meiner Webseite dokumentiere ich diverse Fortschritte: [OpenSRV auf CampingT
 
 Wenn Du mitwirken willst oder schneller Informationen haben möchtest, dann schreibe dich kostenlos in meiner Facebook-Gruppe ein: [OpenSRV-Facebook-Gruppe](https://www.facebook.com/groups/opensrv/)
 
-## GitHub
+## Block-Diagramm
 
-Aktuell habe ich noch zwei weitere Repos, die aber hier reinkopiert werden sollen.
+Version 1.1
 
-* [nodetemphumi01](https://github.com/rbrixel/nodetemphumi01)
-* [skylight-fan-control](https://github.com/rbrixel/skylight-fan-control)
+![Block-Diagramm V1.1 von OpenSRV](https://github.com/rbrixel/opensrv/blob/master/OpenSRV-block-diagram.jpg)
 
 ---
 
@@ -47,9 +46,6 @@ On my website I document various progress: [OpenSRV on CampingTech.de] (https://
 
 If you want to participate or have information faster, then sign up for free in my Facebook group: [OpenSRV-Facebook group] (https://www.facebook.com/groups/opensrv/) (all languages are welcome)
 
-## GitHub
+## Block diagram
 
-I currently have two more repos, but they should be copied in here.
-
-* [nodetemphumi01] (https://github.com/rbrixel/nodetemphumi01)
-* [Fanlight fan control] (https://github.com/rbrixel/skylight-fan-control)
+Only in german. Sorry!
