@@ -25,6 +25,20 @@ Version 1.1
 
 ![Block-Diagramm V1.1 von OpenSRV](https://github.com/rbrixel/opensrv/blob/master/OpenSRV-block-diagram.jpg)
 
+## Erklärung der einzelnen Nodes
+
+Diverse Funktionen und Programmteile teile ich auf unterschiedliche Hardware aus. Teils aus Mangel an Ports, teils aus Kostengründen und teils aus Positionierung im Fahrzeug.
+
+### Node01
+
+*Hardware*
+ESP8266 (Wemos D1 mini Klon)
+
+*Sensoren*
+* BME280 (Temperatur, Luftfeuchigkeit, Luftdruck)
+* ds18b20 (Temperatur, wasserdicht)
+* ublox Neo-6m (GPS, Datum, Uhrzeit, Höhe über Null)
+
 ---
 
 # OpenSRV (EN)
@@ -49,3 +63,17 @@ If you want to participate or have information faster, then sign up for free in 
 ## Block diagram
 
 Only in german. Sorry!
+
+## Explanation of the individual nodes
+
+I distribute various functions and program parts to different hardware. Partly due to lack of ports, partly due to cost reasons and partly due to positioning in the vehicle.
+
+### Node01
+
+*Hardware*
+ESP8266 (Wemos D1 mini clone)
+
+* Sensors *
+* BME280 (temperature, humidity, air pressure)
+* ds18b20 (temperature, waterproof)
+* ublox Neo-6m (GPS, date, time, altitude above zero)
