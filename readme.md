@@ -1,4 +1,4 @@
-Info: English below!
+Info: English below
 
 # OpenSRV (DE)
 
