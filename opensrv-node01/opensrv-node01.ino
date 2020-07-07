@@ -1,6 +1,6 @@
 /*
- * EN: ESP-Temperature- and Humidity-Module
- * DE: ESP-Temperatur- und Luftfeuchtigkeits-Modul
+ * EN: ESP-Temperature-, Humidity-, Airpressure- and GPS-Module
+ * DE: ESP-Temperatur-, Luftfeuchtigkeits-, Luftdruck- und GPS-Modul
  * 
  * Hardware: 
  * - ESP-12F (ESP8266, "Wemos D1 Mini"-Clone)
