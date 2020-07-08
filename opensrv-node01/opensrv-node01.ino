@@ -198,6 +198,7 @@ void handleNotFound() {
  * Webserver: root-handle
  * TODO: Output variables
  */
+char* sensorDataWeb[] = {}; // global var to store values from sensors
 void handleRoot() {
   char temp[400];
   int uptime = millis();
@@ -270,7 +271,43 @@ void setup() {
   }
   server.on("/", handleRoot); // routing
   server.onNotFound(handleNotFound);
+
+  // WebUpdate:
+  server.on("/update", HTTP_GET, []() {
+    server.sendHeader("Connection", "close");
+    const char* serverIndex = "<html><head><title>ESP WebUpdate</title></head><body><form method='POST' action='/updating' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form></body></html>";
+    server.send(200, "text/html", serverIndex);
+  });
+  server.on("/updating", HTTP_POST, []() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+    ESP.restart();
+  }, []() {
+    HTTPUpload& upload = server.upload();
+    if (upload.status == UPLOAD_FILE_START) {
+      Serial.setDebugOutput(true);
+      WiFiUDP::stopAll();
+      Serial.printf("Update: %s\n", upload.filename.c_str());
+      uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+      if (!Update.begin(maxSketchSpace)) { //start with max available size
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
+      if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_END) {
+      if (Update.end(true)) { //true to set the size to the current progress
+        Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+      } else {
+        Update.printError(Serial);
+      }
+      Serial.setDebugOutput(false);
+    }
+    yield();
+  });
   server.begin();
+  MDNS.addService("http", "tcp", 80);
 }
 
 /*
@@ -288,7 +325,7 @@ void loop() {
   }
   client.loop();
 
-  // Webserver:
+  // Webserver and webupdate:
   server.handleClient();
   MDNS.update();
 
@@ -466,5 +503,21 @@ void loop() {
     Serial.println("/position/time/minute: " + String(gpsMinute));
     Serial.println("/position/time/second: " + String(gpsSecond));
     Serial.println("/position/time/centisecond: " + String(gpsCentiSecond));
+
+
+    //sensorDataWeb[0] = &host; // hostname of node
+    //sensorDataWeb[0] = WiFi.localIP(); // ip-address of node
+    //sensorDataWeb[1] = millis(); // uptime of node
+    sensorDataWeb[0] = gpsLat;
+    sensorDataWeb[1] = gpsLon;
+    sensorDataWeb[2] = gpsSat;
+    sensorDataWeb[3] = gpsAlt;
+    sensorDataWeb[4] = gpsYear;
+    sensorDataWeb[5] = gpsMonth;
+    sensorDataWeb[6] = gpsDay;
+    sensorDataWeb[7] = gpsHour;
+    sensorDataWeb[8] = gpsMinute;
+    sensorDataWeb[9] = gpsSecond;
+    sensorDataWeb[10] = gpsCentiSecond;
   }
 }
