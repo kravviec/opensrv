@@ -198,7 +198,7 @@ void handleNotFound() {
  * Webserver: root-handle
  * TODO: Output variables
  */
-char* sensorDataWeb[] = {}; // global var to store values from sensors
+String sensorDataWeb[] = {}; // global var to store values from sensors
 void handleRoot() {
   char temp[400];
   int uptime = millis();
@@ -504,10 +504,10 @@ void loop() {
     Serial.println("/position/time/second: " + String(gpsSecond));
     Serial.println("/position/time/centisecond: " + String(gpsCentiSecond));
 
-
-    //sensorDataWeb[0] = &host; // hostname of node
+    sensorDataWeb[0] = (String)host; // hostname of node
     //sensorDataWeb[0] = WiFi.localIP(); // ip-address of node
-    //sensorDataWeb[1] = millis(); // uptime of node
+    sensorDataWeb[1] = (String)(millis()/1000); // uptime of node
+    /*
     sensorDataWeb[0] = gpsLat;
     sensorDataWeb[1] = gpsLon;
     sensorDataWeb[2] = gpsSat;
@@ -519,5 +519,6 @@ void loop() {
     sensorDataWeb[8] = gpsMinute;
     sensorDataWeb[9] = gpsSecond;
     sensorDataWeb[10] = gpsCentiSecond;
+    */
   }
 }
