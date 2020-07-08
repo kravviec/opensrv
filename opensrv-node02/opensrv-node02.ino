@@ -19,20 +19,39 @@
  * Adafruit GFX Library v1.9.0 by Adafruit
  */
 
-// ==[ CONFIG: DHT22-Sensor (temperature and humidity; indoor) ]==
-#include "DHT.h"
-#define DHTPIN 2 // "D2"
-#define DHTTYPE DHT22 // DHT11 or DHT22
-DHT dht(DHTPIN, DHTTYPE);
+// WIFI
+#include <ESP8266WiFi.h> // ESP8266
+#ifndef STASSID
+#define STASSID "*****" // your wifi-name
+#define STAPSK  "*****" // your wifi-password
+#endif
+const char* host = "node02"; // hostname of module
+const char* ssid = STASSID;
+const char* password = STAPSK;
 
-// ==[ CONFIG: EEPROM ]==
+// MQTT-Client
+#include <PubSubClient.h>
+const char* MQTT_BROKER = "192.168.111.199"; // ip-address of your mqtt-broker
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+// OTA-Update
+#include <ESP8266mDNS.h> // ESP8266
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
+
+// BME280
+#include <cactus_io_BME280_I2C.h>
+BME280_I2C bme(0x76); // uint i2c-address
+
+// EEPROM
 #include <EEPROM.h>
 #define EFANTEMP  0 // Set temperature when fan should start
 #define EFANTIME  1 // duration in minutes how long the fan should spin
 #define EFANSMAX  2 // max rpm in percent
 #define EFANTMAX  3 // duration how long it took the fan to max rpm
 
-// ==[ CONFIG: OLED-Display over i2c ]==
+// OLED-Display over i2c
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -43,7 +62,7 @@ DHT dht(DHTPIN, DHTTYPE);
 #define OLED_I2C      0x3C // i2c-address of display
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-// ==[ CONFIG: Timer for Non-Blocking-Code ]==
+// Interval-values (for non blocking code)
 unsigned long nbcPreviousMillis = 0; // holds last timestamp
 const long nbcInterval = 2000; // interval in milliseconds (1000 milliseconds = 1 second)
 

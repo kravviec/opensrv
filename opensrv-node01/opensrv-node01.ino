@@ -1,4 +1,7 @@
 /*
+ * OPENSRV-NODE01
+ * --------------
+ * 
  * EN: ESP-Temperature-, Humidity-, Airpressure- and GPS-Module
  * DE: ESP-Temperatur-, Luftfeuchtigkeits-, Luftdruck- und GPS-Modul
  * 
@@ -17,10 +20,7 @@
  * - Cactus.io BME280 (http://cactus.io/projects/weather/arduino-weather-station-bme280-sensor)
  * 
  * Setup:
- * - Change SSID of your wifi (STASSID)
- * - Change wifi-password (STAPSK)
- * - Change hostname of your module (host)
- * - Change ip-address of your MQTT-Broker (MQTT_BROKER)
+ * - Change wifi- and MQTT-broker-settings in node-config.h
  * - Change DS18B20-Pin (ONE_WIRE_BUS)
  * - Change Software-Serial-Pins (RXPin, TXPin)
  * 
@@ -44,39 +44,54 @@
  * GitHub: https://github.com/rbrixel
  */
 
-// WIFI
-#include <ESP8266WiFi.h> // ESP8266
-#ifndef STASSID
-#define STASSID "*****" // your wifi-name
-#define STAPSK  "*****" // your wifi-password
-#endif
-const char* host = "node01"; // hostname of module
-const char* ssid = STASSID;
-const char* password = STAPSK;
+/*
+ * Include config-file
+ */
+#include "node-config.h"
 
-// MQTT-Client
+/*
+ * Wifi-setup
+ */
+#include <ESP8266WiFi.h> // ESP8266
+
+/*
+ * MQTT-client-setup
+ */
 #include <PubSubClient.h>
-const char* MQTT_BROKER = "192.168.111.199"; // ip-address of your mqtt-broker
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-// OTA-Update
+/*
+ * OTA-update-setup
+ */
 #include <ESP8266mDNS.h> // ESP8266
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 
-// BME280
+/*
+ * Webserver-setup
+ */
+#include <ESP8266WebServer.h>
+ESP8266WebServer server(80); // listen on port 80
+
+/*
+ * BME280-setup
+ */
 #include <cactus_io_BME280_I2C.h>
 BME280_I2C bme(0x76); // uint i2c-address
 
-// DS18B20
+/*
+ * ds18b20-setup
+ */
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #define ONE_WIRE_BUS 16 // GPIO16 - D0
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature ds18sensors(&oneWire);
 
-// GPS
+/*
+ * GPS-setup
+ */
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
 static const int RXPin = 0, TXPin = 2; // RXPin = D3, TXPin = D4;
@@ -84,37 +99,15 @@ static const uint32_t GPSBaud = 9600; // Standard 9600, alternative 4800
 TinyGPSPlus gps;
 SoftwareSerial ss(RXPin, TXPin);
 
-// Interval-values (for non blocking code)
+/*
+ * Non-blocking-code variables
+ */
 unsigned long nbcPreviousMillis = 0; // holds last timestamp
 const long nbcInterval = 5000; // interval in milliseconds (1000 milliseconds = 1 second)
 
-void setup() {
-  // Start serial-connection for esp
-  Serial.begin(115200);
-
-  // Start BME280
-  if (!bme.begin()) {
-    Serial.println("Could not find BME280 sensor, check wiring");
-    while (1);
-  }
-  bme.setTempCal(-1);// Temp was reading high so subtract 1 degree
-
-  // Start DS18B20-sensor
-  ds18sensors.begin();
-
-  // Start wifi and connect to access point
-  setup_wifi();
-
-  // Start over-the-air-update
-  setup_otau();
-
-  // Start MQTT-publisher
-  client.setServer(MQTT_BROKER, 1883); // ip-address, port 1883
-
-  // Start Software-serial for gps
-  ss.begin(GPSBaud);
-}
-
+/*
+ * Wifi-setup-function
+ */
 void setup_wifi() {
   delay(10);
   Serial.println();
@@ -136,6 +129,9 @@ void setup_wifi() {
   delay(500);
 }
 
+/*
+ * OTA-update-setup-function
+ */
 void setup_otau() {
   // ArduinoOTA.setPort(8266); // Port defaults to 8266
   ArduinoOTA.setHostname(host); // Hostname defaults to esp8266-[ChipID]
@@ -178,7 +174,53 @@ void setup_otau() {
   ArduinoOTA.begin();
 }
 
-// MQTT-Reconnect (for publishing only):
+/*
+ * Webserver: not-found-handle
+ */
+void handleNotFound() {
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server.uri();
+  message += "\nMethod: ";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server.args();
+  message += "\n";
+
+  for (uint8_t i = 0; i < server.args(); i++) {
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+  }
+
+  server.send(404, "text/plain", message);
+}
+
+/*
+ * Webserver: root-handle
+ * TODO: Output variables
+ */
+void handleRoot() {
+  char temp[400];
+  int uptime = millis();
+
+  snprintf(temp, 400,
+           "<html>\
+  <head>\
+    <meta http-equiv='refresh' content='5'/>\
+    <title>node01 raw output</title>\
+    <style>\
+      body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
+    </style>\
+  </head>\
+  <body>\
+    <p>Uptime: %02d</p>\
+  </body>\
+</html>", uptime);
+  server.send(200, "text/html", temp);
+}
+
+/*
+ * MQTT-reconnect (for publishing only)
+ */
 void reconnect() {
   while (!client.connected()) {
     Serial.print("Reconnecting...");
@@ -193,6 +235,47 @@ void reconnect() {
   Serial.println("MQTT Connected!");
 }
 
+/*
+ * Main-setup
+ */
+void setup() {
+  // Start serial-connection for esp
+  Serial.begin(115200);
+
+  // Start BME280
+  if (!bme.begin()) {
+    Serial.println("Could not find BME280 sensor, check wiring");
+    while (1);
+  }
+  bme.setTempCal(-1);// Temp was reading high so subtract 1 degree
+
+  // Start DS18B20-sensor
+  ds18sensors.begin();
+
+  // Start wifi and connect to access point
+  setup_wifi();
+
+  // Start over-the-air-update
+  setup_otau();
+
+  // Start MQTT-publisher
+  client.setServer(MQTT_BROKER, 1883); // ip-address, port 1883
+
+  // Start Software-serial for gps
+  ss.begin(GPSBaud);
+
+  // Start webserver
+  if (MDNS.begin(host)) {
+    Serial.println("MDNS responder started");
+  }
+  server.on("/", handleRoot); // routing
+  server.onNotFound(handleNotFound);
+  server.begin();
+}
+
+/*
+ * Main-loop
+ */
 void loop() {
   // --- realtime code ---
 
@@ -204,6 +287,10 @@ void loop() {
     reconnect();
   }
   client.loop();
+
+  // Webserver:
+  server.handleClient();
+  MDNS.update();
 
   // GPS:
   float gpsLat = 0.0; // double lat() / Latitude
