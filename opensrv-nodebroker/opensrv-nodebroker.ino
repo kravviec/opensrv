@@ -50,6 +50,12 @@ void startWiFiClient()
   Serial.println("Connecting to "+(String)ssid);
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pass);
+
+  // static ip address
+  IPAddress ip(192,168,111,199);   
+  IPAddress gateway(192,168,111,1);   
+  IPAddress subnet(255,255,255,0);   
+  WiFi.config(ip, gateway, subnet);
   
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
