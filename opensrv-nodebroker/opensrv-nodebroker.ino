@@ -4,6 +4,8 @@
  * The program defines a custom broker class with callbacks, 
  * starts it, subscribes locally to anything, and publishs a topic every second.
  * Try to connect from a remote client and publish something - the console will show this as well.
+ * 
+ * https://github.com/martin-ger/uMQTTBroker
  */
 
 #include <ESP8266WiFi.h>
@@ -48,7 +50,8 @@ myMQTTBroker myBroker;
 void startWiFiClient()
 {
   Serial.println("Connecting to "+(String)ssid);
-  WiFi.mode(WIFI_STA);
+  WiFi.mode(WIFI_STA); // set explicit as wifi-client - important that it not acts as an accesspoint AND client!
+  WiFi.hostname("nodebroker"); // set hostname of module
   WiFi.begin(ssid, pass);
 
   // static ip address
