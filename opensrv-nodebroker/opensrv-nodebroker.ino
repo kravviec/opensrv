@@ -1,11 +1,25 @@
 /*
- * uMQTTBroker demo for Arduino (C++-style)
+ * OPENSRV-NODEBROKER
+ * ------------------
  * 
- * The program defines a custom broker class with callbacks, 
- * starts it, subscribes locally to anything, and publishs a topic every second.
- * Try to connect from a remote client and publish something - the console will show this as well.
+ * EN: MQTT-BRoker on ESP8266
+ * DE: MQTT-Broker auf einem ESP8266
  * 
- * https://github.com/martin-ger/uMQTTBroker
+ * Hardware: 
+ * - ESP-12F (ESP8266 DevKit V3)
+ * 
+ * Software:
+ * - wifi8266 (integrated in esp8266)
+ * - uMQTTBroker (https://github.com/martin-ger/uMQTTBroker)
+ * 
+ * Setup:
+ * - Change wifi- and MQTT-broker-settings
+ * - Quote from martin-ger: "Important: Use the setting "lwip Variant: 1.4 High Bandwidth" in the "Tools" menu"
+ * 
+ * Author: René Brixel <mail@campingtech.de>
+ * Date: 2020-07-09
+ * Web: https://campingtech.de/opensrv
+ * GitHub: https://github.com/rbrixel
  */
 
 #include <ESP8266WiFi.h>
@@ -55,6 +69,7 @@ void startWiFiClient()
   WiFi.begin(ssid, pass);
 
   // static ip address
+  // A Static IP-Address is important for the other nodes to publish via MQTT!
   IPAddress ip(192,168,111,199);   
   IPAddress gateway(192,168,111,1);   
   IPAddress subnet(255,255,255,0);   
@@ -89,15 +104,7 @@ void setup()
   myBroker.subscribe("#");
 }
 
-//int counter = 0;
-
 void loop()
 {
-  /*
-   * Publish the counter value as String
-   */
-  //myBroker.publish("broker/counter", (String)counter++);
-   
-  // wait a second
-  //delay(1000);
+  /* Nothing to do */
 }

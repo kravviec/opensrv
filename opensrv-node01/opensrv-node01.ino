@@ -69,12 +69,6 @@ PubSubClient client(espClient);
 #include <ArduinoOTA.h>
 
 /*
- * Webserver-setup
- */
-#include <ESP8266WebServer.h>
-ESP8266WebServer server(80); // listen on port 80
-
-/*
  * BME280-setup
  */
 #include <cactus_io_BME280_I2C.h>
@@ -103,7 +97,7 @@ SoftwareSerial ss(RXPin, TXPin);
  * Non-blocking-code variables
  */
 unsigned long nbcPreviousMillis = 0; // holds last timestamp
-const long nbcInterval = 5000; // interval in milliseconds (1000 milliseconds = 1 second)
+const long nbcInterval = 3000; // interval in milliseconds (1000 milliseconds = 1 second)
 
 /*
  * Wifi-setup-function
@@ -175,51 +169,6 @@ void setup_otau() {
 }
 
 /*
- * Webserver: not-found-handle
- */
-void handleNotFound() {
-  String message = "File Not Found\n\n";
-  message += "URI: ";
-  message += server.uri();
-  message += "\nMethod: ";
-  message += (server.method() == HTTP_GET) ? "GET" : "POST";
-  message += "\nArguments: ";
-  message += server.args();
-  message += "\n";
-
-  for (uint8_t i = 0; i < server.args(); i++) {
-    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
-  }
-
-  server.send(404, "text/plain", message);
-}
-
-/*
- * Webserver: root-handle
- * TODO: Output variables
- */
-String sensorDataWeb[] = {}; // global var to store values from sensors
-void handleRoot() {
-  char temp[400];
-  int uptime = millis();
-
-  snprintf(temp, 400,
-           "<html>\
-  <head>\
-    <meta http-equiv='refresh' content='5'/>\
-    <title>node01 raw output</title>\
-    <style>\
-      body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
-    </style>\
-  </head>\
-  <body>\
-    <p>Uptime: %02d</p>\
-  </body>\
-</html>", uptime);
-  server.send(200, "text/html", temp);
-}
-
-/*
  * MQTT-reconnect (for publishing only)
  */
 void reconnect() {
@@ -243,6 +192,9 @@ void setup() {
   // Start serial-connection for esp
   Serial.begin(115200);
 
+  // Start Software-serial for gps
+  ss.begin(GPSBaud);
+
   // Start BME280
   if (!bme.begin()) {
     Serial.println("Could not find BME280 sensor, check wiring");
@@ -261,53 +213,6 @@ void setup() {
 
   // Start MQTT-publisher
   client.setServer(MQTT_BROKER, 1883); // ip-address, port 1883
-
-  // Start Software-serial for gps
-  ss.begin(GPSBaud);
-
-  // Start webserver
-  if (MDNS.begin(host)) {
-    Serial.println("MDNS responder started");
-  }
-  server.on("/", handleRoot); // routing
-  server.onNotFound(handleNotFound);
-
-  // WebUpdate:
-  server.on("/update", HTTP_GET, []() {
-    server.sendHeader("Connection", "close");
-    const char* serverIndex = "<html><head><title>ESP WebUpdate</title></head><body><form method='POST' action='/updating' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form></body></html>";
-    server.send(200, "text/html", serverIndex);
-  });
-  server.on("/updating", HTTP_POST, []() {
-    server.sendHeader("Connection", "close");
-    server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
-    ESP.restart();
-  }, []() {
-    HTTPUpload& upload = server.upload();
-    if (upload.status == UPLOAD_FILE_START) {
-      Serial.setDebugOutput(true);
-      WiFiUDP::stopAll();
-      Serial.printf("Update: %s\n", upload.filename.c_str());
-      uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
-      if (!Update.begin(maxSketchSpace)) { //start with max available size
-        Update.printError(Serial);
-      }
-    } else if (upload.status == UPLOAD_FILE_WRITE) {
-      if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
-        Update.printError(Serial);
-      }
-    } else if (upload.status == UPLOAD_FILE_END) {
-      if (Update.end(true)) { //true to set the size to the current progress
-        Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
-      } else {
-        Update.printError(Serial);
-      }
-      Serial.setDebugOutput(false);
-    }
-    yield();
-  });
-  server.begin();
-  MDNS.addService("http", "tcp", 80);
 }
 
 /*
@@ -325,15 +230,15 @@ void loop() {
   }
   client.loop();
 
-  // Webserver and webupdate:
-  server.handleClient();
-  MDNS.update();
+  // Webupdate:
+  //MDNS.update();
 
   // GPS:
   float gpsLat = 0.0; // double lat() / Latitude
   float gpsLon = 0.0; // double lng() / Longitude
-  unsigned int gpsSat = 0.0; // uint32_t value() / Satellites
+  float gpsSat = 0.0; // uint32_t value() / Satellites
   float gpsAlt = 0.0; // double meters() / Altitude
+  /*
   unsigned int gpsYear = 0; // uint16_t year() / Year
   unsigned int gpsMonth = 0; // uint8_t month() / Month
   unsigned int gpsDay = 0; // uint8_t day() / Day
@@ -341,33 +246,26 @@ void loop() {
   unsigned int gpsMinute = 0; // uint8_t hour() / Minute
   unsigned int gpsSecond = 0; // uint8_t second() / Second
   unsigned int gpsCentiSecond = 0; // uint8_t centisecond() / Centisecond
+  */
   // A variable declared as "unsigned" can only stores positive values!
 
-  while (ss.available() > 0) {
-    if (gps.encode(ss.read())) {
-      if (gps.location.isValid() && gps.location.isUpdated()) {
+  unsigned long start = millis();
+  do 
+  {
+    while (ss.available())
+      gps.encode(ss.read());
+  } while (millis() - start < 1000);
+
+        if (gps.location.isValid()) {
         gpsLat = gps.location.lat();
         gpsLon = gps.location.lng();
       }
-      if (gps.satellites.isValid() && gps.satellites.isUpdated()) {
+      if (gps.satellites.isValid()) {
         gpsSat = gps.satellites.value();
       }
-      if (gps.altitude.isValid() && gps.altitude.isUpdated()) {
+      if (gps.altitude.isValid()) {
         gpsAlt = gps.altitude.meters();
       }
-      if (gps.time.isValid() && gps.time.isUpdated()) {
-        gpsHour = gps.time.hour();
-        gpsMinute = gps.time.minute();
-        gpsSecond = gps.time.second();
-        gpsCentiSecond = gps.time.centisecond();
-      }
-      if (gps.date.isValid() && gps.date.isUpdated()) {
-        gpsYear = gps.date.year();
-        gpsMonth = gps.date.month();
-        gpsDay = gps.date.day();
-      }
-    }
-  }
   
   // --- non-blocking-code, every x sec. publishing ---
   unsigned long nbcCurrentMillis = millis(); // get actual timestamp
@@ -415,87 +313,100 @@ void loop() {
     Serial.println("/climate/indoor/floor/pressure-mb: " + String(bMb) + " (millibars)");
 
     // GPS:
+    Serial.println("Failed Checksum GPS: " + String(gps.failedChecksum()));
+    /*
     if (gpsLat == 0.0) {
       client.publish("/position/latitude", "error");
+      Serial.println("/position/latitude: error");
     } else {
+    */
       snprintf (msg, 50, "%.2f", gpsLat);
       client.publish("/position/latitude", msg);
-    }
+      Serial.println("/position/latitude: " + String(gpsLat) + " (N, Breitengrad)");
+    //}
 
+    /*
     if (gpsLon == 0.0) {
-      client.publish("/position/latitude", "error");
+      client.publish("/position/longitude", "error");
+      Serial.println("/position/longitude: error");
     } else {
+    */
       snprintf (msg, 50, "%.2f", gpsLon);
       client.publish("/position/longitude", msg);
-    }
-
+      Serial.println("/position/longitude: " + String(gpsLon) + " (E, Längengrad)");
+    //}
+    /*
     if (gpsSat == 0) {
-      client.publish("/position/latitude", "error");
+      client.publish("/position/satellites", "error");
+      Serial.println("/position/satellites: error");
     } else {
-      snprintf (msg, 50, "%0d", gpsSat);
+    */
+      snprintf (msg, 50, "%.2f", gpsSat);
       client.publish("/position/satellites", msg);
-    }
-
+      Serial.println("/position/satellites: " + String(gpsSat) + " (number)");
+    //}
+    /*
     if (gpsAlt == 0.0) {
-      client.publish("/position/latitude", "error");
+      client.publish("/position/altitude", "error");
+      Serial.println("/position/altitude: error");
     } else {
+    */
       snprintf (msg, 50, "%.2f", gpsAlt);
       client.publish("/position/altitude", msg);
-    }
-
+      Serial.println("/position/altitude: " + String(gpsAlt) + " (meters)");
+    //}
+    /*
     if (gpsYear == 0) {
       client.publish("/position/date/year", "error");
     } else {
-      snprintf (msg, 50, "%0d", gpsYear);
+      snprintf (msg, 50, "%.2f", gpsYear);
       client.publish("/position/date/year", msg);
     }
 
     if (gpsMonth == 0) {
       client.publish("/position/date/month", "error");
     } else {
-      snprintf (msg, 50, "%0d", gpsMonth);
+      snprintf (msg, 50, "%.2f", gpsMonth);
       client.publish("/position/date/month", msg);
     }
 
     if (gpsDay == 0) {
       client.publish("/position/date/day", "error");
     } else {
-      snprintf (msg, 50, "%0d", gpsDay);
+      snprintf (msg, 50, "%.2f", gpsDay);
       client.publish("/position/date/day", msg);
     }
 
     if (gpsHour == 0) {
       client.publish("/position/time/hour", "error");
     } else {
-      snprintf (msg, 50, "%0d", gpsHour);
+      snprintf (msg, 50, "%.2f", gpsHour);
       client.publish("/position/time/hour", msg);
     }
 
     if (gpsMinute == 0) {
       client.publish("/position/time/minute", "error");
     } else {
-      snprintf (msg, 50, "%0d", gpsMinute);
+      snprintf (msg, 50, "%.2f", gpsMinute);
       client.publish("/position/time/minute", msg);
     }
 
     if (gpsSecond == 0) {
       client.publish("/position/time/second", "error");
     } else {
-      snprintf (msg, 50, "%0d", gpsSecond);
+      snprintf (msg, 50, "%.2f", gpsSecond);
       client.publish("/position/time/second", msg);
     }
 
     if (gpsCentiSecond == 0) {
       client.publish("/position/time/centisecond", "error");
     } else {
-      snprintf (msg, 50, "%0d", gpsCentiSecond);
+      snprintf (msg, 50, "%.2f", gpsCentiSecond);
       client.publish("/position/time/centisecond", msg);
     }
+    */
     
-    Serial.println("/position/latitude: " + String(gpsLat) + " (N, Breitengrad)");
-    Serial.println("/position/longitude: " + String(gpsLon) + " (E, Längengrad)");
-    Serial.println("/position/satellites: " + String(gpsSat) + " (number)");
-    Serial.println("/position/altitude: " + String(gpsAlt) + " (meters)");
+    /*
     Serial.println("/position/date/year: " + String(gpsYear));
     Serial.println("/position/date/month: " + String(gpsMonth));
     Serial.println("/position/date/day: " + String(gpsDay));
@@ -503,22 +414,6 @@ void loop() {
     Serial.println("/position/time/minute: " + String(gpsMinute));
     Serial.println("/position/time/second: " + String(gpsSecond));
     Serial.println("/position/time/centisecond: " + String(gpsCentiSecond));
-
-    sensorDataWeb[0] = (String)host; // hostname of node
-    //sensorDataWeb[0] = WiFi.localIP(); // ip-address of node
-    sensorDataWeb[1] = (String)(millis()/1000); // uptime of node
-    /*
-    sensorDataWeb[0] = gpsLat;
-    sensorDataWeb[1] = gpsLon;
-    sensorDataWeb[2] = gpsSat;
-    sensorDataWeb[3] = gpsAlt;
-    sensorDataWeb[4] = gpsYear;
-    sensorDataWeb[5] = gpsMonth;
-    sensorDataWeb[6] = gpsDay;
-    sensorDataWeb[7] = gpsHour;
-    sensorDataWeb[8] = gpsMinute;
-    sensorDataWeb[9] = gpsSecond;
-    sensorDataWeb[10] = gpsCentiSecond;
     */
   }
 }
