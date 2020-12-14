@@ -1,5 +1,9 @@
 Info: English below
 
+**CHECK OUT THE SMALLER VERSION OF OPENSRV AT: https://github.com/rbrixel/opensrvmini - THE MAIN OPENSRV-PROJECT IS PAUSED**
+
+**SCHAUE DIR DIE KLEINERE VERSION VON OPENSRV AN: https://github.com/rbrixel/opensrvmini - DAS HAUPT-PROJEKT IST ERSTMAL AUF EIS GELEGT**
+
 # OpenSRV (DE)
 
 Ziel von OpenSRV soll es sein, im Wohnmobil oder Wohnwagen, Smarthome-ähnliche Funktionen nachzurüsten.
