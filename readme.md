@@ -29,7 +29,7 @@ Wenn Du mitwirken willst oder schneller Informationen haben möchtest, dann schr
 
 Version 1.1
 
-![Block-Diagramm V1.1 von OpenSRV](https://github.com/rbrixel/opensrv/blob/master/OpenSRV-block-diagram.jpg)
+![Block-Diagramm V1.1 von OpenSRV](/OpenSRV-block-diagram.jpg)
 
 ## Erklärung der einzelnen Nodes
 
