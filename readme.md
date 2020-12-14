@@ -6,6 +6,8 @@ Info: English below
 
 # OpenSRV (DE)
 
+![OpenSRV-Logo](/OpenSRV-Logo.jpg)
+
 Ziel von OpenSRV soll es sein, im Wohnmobil oder Wohnwagen, Smarthome-ähnliche Funktionen nachzurüsten.
 
 ## Geplante Funktionen
